@@ -1,0 +1,157 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package sudenaz_yıldırım_2221251033_networklab_2026;
+
+import java.net.Socket;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+/**
+ *
+ * @author ASUS
+ */
+public class ChessClient {
+
+    private Socket socket;
+
+    private InputStream inputStream;
+    private OutputStream outputStream;
+
+    private String playerColor;
+    private game gameScreen;
+
+    // Constructor
+    // Yapici metod
+    public ChessClient(String serverIP, int serverPort) {
+
+        try {
+
+            // Connect to server
+            // Servera baglan
+            socket = new Socket(serverIP, serverPort);
+
+            System.out.println("[CLIENT] Connected to server "
+                    + serverIP + ":" + serverPort);
+
+            System.out.println("[CLIENT] Servera baglanildi "
+                    + serverIP + ":" + serverPort);
+
+            System.out.println();
+
+            // Get socket streams
+            // Socket akislarini al
+            inputStream = socket.getInputStream();
+            outputStream = socket.getOutputStream();
+
+            // Read color information from server
+            // Serverdan renk bilgisini oku
+            byte[] buffer = new byte[1024];
+
+            int bytesRead = inputStream.read(buffer);
+
+            String colorMessage = new String(buffer, 0, bytesRead);
+
+            System.out.println("[CLIENT] Server message: " + colorMessage);
+            System.out.println("[CLIENT] Server mesaji: " + colorMessage);
+
+            // Example:
+            // COLOR:WHITE
+            if (colorMessage.toUpperCase().contains("WHITE")) {
+
+                playerColor = "WHITE";
+
+            } else if (colorMessage.toUpperCase().contains("BLACK")) {
+
+                playerColor = "BLACK";
+            }
+
+            System.out.println("[CLIENT] Your color: " + playerColor);
+            System.out.println("[CLIENT] Renginiz: " + playerColor);
+
+        } catch (Exception e) {
+
+            System.out.println("[CLIENT] Error / Hata: " + e.getMessage());
+        }
+    }
+
+    // Send move to server
+    // Hamleyi servera gonder
+    public void sendMove(int oldRow, int oldCol,
+            int newRow, int newCol) {
+
+        try {
+
+            String moveMessage
+                    = "MOVE:" + oldRow + "," + oldCol + ","
+                    + newRow + "," + newCol;
+
+            outputStream.write(moveMessage.getBytes());
+
+            System.out.println("[CLIENT] Move sent: " + moveMessage);
+            System.out.println("[CLIENT] Hamle gonderildi: " + moveMessage);
+
+        } catch (Exception e) {
+
+            System.out.println("[CLIENT] Send Error / Gonderme Hatasi: "
+                    + e.getMessage());
+        }
+    }
+
+    // Getter
+    public String getPlayerColor() {
+        return playerColor;
+    }
+
+    public void setGameScreen(game gameScreen) {
+        this.gameScreen = gameScreen;
+    }
+
+    public void listenForMessages() {
+
+        Thread listenerThread = new Thread(() -> {
+
+            try {
+
+                byte[] buffer = new byte[1024];
+
+                while (true) {
+
+                    int bytesRead = inputStream.read(buffer);
+
+                    if (bytesRead == -1) {
+                        System.out.println("[CLIENT] Server disconnected");
+                        break;
+                    }
+
+                    String message = new String(buffer, 0, bytesRead);
+
+                    System.out.println("[CLIENT] Message received: " + message);
+
+                    if (message.startsWith("MOVE:")) {
+
+                        String data = message.substring(5);
+                        String[] parts = data.split(",");
+
+                        int oldRow = Integer.parseInt(parts[0]);
+                        int oldCol = Integer.parseInt(parts[1]);
+                        int newRow = Integer.parseInt(parts[2]);
+                        int newCol = Integer.parseInt(parts[3]);
+
+                        if (gameScreen != null) {
+                            gameScreen.applyOpponentMove(oldRow, oldCol, newRow, newCol);
+                        }
+                    }
+                }
+
+            } catch (Exception e) {
+                System.out.println("[CLIENT] Listen Error / Dinleme Hatasi: "
+                        + e.getMessage());
+            }
+        });
+
+        listenerThread.start();
+    }
+
+}
