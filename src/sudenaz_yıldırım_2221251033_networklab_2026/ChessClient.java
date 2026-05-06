@@ -129,6 +129,18 @@ public class ChessClient {
 
                     System.out.println("[CLIENT] Message received: " + message);
 
+                    System.out.println("[CLIENT] Message received: " + message);
+
+                    if (message.equals("DISCONNECTED")) {
+
+                        javax.swing.JOptionPane.showMessageDialog(
+                                null,
+                                "Opponent disconnected!"
+                        );
+
+                        System.exit(0);
+                    }
+
                     if (message.startsWith("MOVE:")) {
 
                         String data = message.substring(5);
@@ -146,9 +158,17 @@ public class ChessClient {
                 }
 
             } catch (Exception e) {
-                System.out.println("[CLIENT] Listen Error / Dinleme Hatasi: "
-                        + e.getMessage());
-            }
+
+    System.out.println("[CLIENT] Listen Error / Dinleme Hatasi: "
+            + e.getMessage());
+
+    javax.swing.JOptionPane.showMessageDialog(
+            null,
+            "Opponent disconnected!"
+    );
+
+    System.exit(0);
+}
         });
 
         listenerThread.start();

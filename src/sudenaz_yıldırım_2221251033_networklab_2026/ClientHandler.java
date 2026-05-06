@@ -40,8 +40,14 @@ public class ClientHandler extends Thread {
                 int bytesRead = inputStream.read(buffer);
 
                 if (bytesRead == -1) {
+
                     System.out.println("[SERVER] " + playerColor + " disconnected");
                     System.out.println("[SERVER] " + playerColor + " baglantisi koptu");
+
+                    // INFORM OPPONENT
+                    // Rakibe bilgi gonder
+                    opponentOutputStream.write("DISCONNECTED".getBytes());
+                    opponentOutputStream.flush();
                     break;
                 }
 
@@ -60,7 +66,21 @@ public class ClientHandler extends Thread {
             }
 
         } catch (Exception e) {
+
             System.out.println("[SERVER] ClientHandler Error / Hata: " + e.getMessage());
+
+            try {
+                OutputStream opponentOutputStream = opponentSocket.getOutputStream();
+                opponentOutputStream.write("DISCONNECTED".getBytes());
+                opponentOutputStream.flush();
+
+                System.out.println("[SERVER] Opponent informed about disconnect");
+                System.out.println("[SERVER] Rakibe baglanti kopma bilgisi gonderildi");
+
+            } catch (Exception ex) {
+                System.out.println("[SERVER] Could not inform opponent / Rakibe bilgi gonderilemedi: "
+                        + ex.getMessage());
+            }
         }
     }
 }
