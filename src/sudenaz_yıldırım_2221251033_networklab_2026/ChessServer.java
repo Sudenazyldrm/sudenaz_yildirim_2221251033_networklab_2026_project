@@ -13,59 +13,87 @@ import java.net.Socket;
 public class ChessServer {
 
 
+    // Waiting player
+    // Rakip bekleyen oyuncu
+    private static Socket waitingPlayer = null;
 
     public static void main(String[] args) {
 
-        // Define the port number the server will listen on
-        // Sunucunun dinleyecegi port numarasini tanimla
         int port = 5000;
 
         try (ServerSocket serverSocket = new ServerSocket(port)) {
 
             System.out.println("[SERVER] Chess Server started on port " + port);
-            System.out.println("[SERVER] Satranc server " + port + " portunda baslatildi");
+            System.out.println("[SERVER] Satranc server baslatildi");
             System.out.println();
 
-            System.out.println("[SERVER] Waiting for Player 1...");
-            System.out.println("[SERVER] Oyuncu 1 bekleniyor...");
+            // Infinite loop
+            // Sonsuz client kabul dongusu
+            while (true) {
 
-            Socket player1 = serverSocket.accept();
+                System.out.println("[SERVER] Waiting for connection...");
+                System.out.println("[SERVER] Baglanti bekleniyor...");
 
-            System.out.println("[SERVER] Player 1 connected: " + player1.getInetAddress());
-            System.out.println("[SERVER] Oyuncu 1 baglandi: " + player1.getInetAddress());
-            System.out.println();
+                Socket newPlayer = serverSocket.accept();
 
-            System.out.println("[SERVER] Waiting for Player 2...");
-            System.out.println("[SERVER] Oyuncu 2 bekleniyor...");
+                System.out.println("[SERVER] New player connected: "
+                        + newPlayer.getInetAddress());
 
-            Socket player2 = serverSocket.accept();
+                // No waiting player
+                // Bekleyen oyuncu yoksa
+                if (waitingPlayer == null) {
 
-            System.out.println("[SERVER] Player 2 connected: " + player2.getInetAddress());
-            System.out.println("[SERVER] Oyuncu 2 baglandi: " + player2.getInetAddress());
-            System.out.println();
+                    waitingPlayer = newPlayer;
 
-            // Send color information to clients
-            // Clientlara renk bilgisini gonder
-            player1.getOutputStream().write("COLOR:WHITE".getBytes());
-            player2.getOutputStream().write("COLOR:BLACK".getBytes());
+                    System.out.println("[SERVER] Player waiting for opponent...");
+                    System.out.println("[SERVER] Oyuncu rakip bekliyor...");
 
-            System.out.println("[SERVER] Player 1 color: WHITE");
-            System.out.println("[SERVER] Player 2 color: BLACK");
-            System.out.println();
+                    // Inform player
+                    // Oyuncuya bilgi ver
+                    newPlayer.getOutputStream()
+                            .write("WAITING".getBytes());
 
-            // Create client handler threads
-            // Clientlari dinleyen threadleri olustur
-            ClientHandler handler1 = new ClientHandler(player1, player2, "WHITE");
-            ClientHandler handler2 = new ClientHandler(player2, player1, "BLACK");
+                } else {
 
-            handler1.start();
-            handler2.start();
+                    // Match players
+                    // Oyunculari eslestir
+                    Socket player1 = waitingPlayer;
+                    Socket player2 = newPlayer;
 
-            System.out.println("[SERVER] Game started");
-            System.out.println("[SERVER] Oyun basladi");
+                    waitingPlayer = null;
+
+                    System.out.println("[SERVER] Match found!");
+                    System.out.println("[SERVER] Eslesme bulundu!");
+
+                    // Send colors
+                    // Renkleri gonder
+                    player1.getOutputStream()
+                            .write("COLOR:WHITE".getBytes());
+
+                    player2.getOutputStream()
+                            .write("COLOR:BLACK".getBytes());
+
+                    // Create handlers
+                    // Client handlerlari olustur
+                    ClientHandler handler1 =
+                            new ClientHandler(player1, player2, "WHITE");
+
+                    ClientHandler handler2 =
+                            new ClientHandler(player2, player1, "BLACK");
+
+                    handler1.start();
+                    handler2.start();
+
+                    System.out.println("[SERVER] Game started");
+                    System.out.println("[SERVER] Oyun basladi");
+                    System.out.println();
+                }
+            }
 
         } catch (Exception e) {
-            System.out.println("[SERVER] Error / Hata: " + e.getMessage());
+
+            System.out.println("[SERVER] Error / Hata: "
+                    + e.getMessage());
         }
     }
 }

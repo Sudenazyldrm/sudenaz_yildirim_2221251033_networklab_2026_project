@@ -1,17 +1,9 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package sudenaz_yıldırım_2221251033_networklab_2026;
 
 import java.net.Socket;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-/**
- *
- * @author ASUS
- */
 public class ChessClient {
 
     private Socket socket;
@@ -22,14 +14,10 @@ public class ChessClient {
     private String playerColor;
     private game gameScreen;
 
-    // Constructor
-    // Yapici metod
     public ChessClient(String serverIP, int serverPort) {
 
         try {
 
-            // Connect to server
-            // Servera baglan
             socket = new Socket(serverIP, serverPort);
 
             System.out.println("[CLIENT] Connected to server "
@@ -40,31 +28,42 @@ public class ChessClient {
 
             System.out.println();
 
-            // Get socket streams
-            // Socket akislarini al
             inputStream = socket.getInputStream();
             outputStream = socket.getOutputStream();
 
-            // Read color information from server
-            // Serverdan renk bilgisini oku
             byte[] buffer = new byte[1024];
 
-            int bytesRead = inputStream.read(buffer);
+            // Read messages until color comes
+            // Renk bilgisi gelene kadar serverdan mesaj oku
+            while (playerColor == null) {
 
-            String colorMessage = new String(buffer, 0, bytesRead);
+                int bytesRead = inputStream.read(buffer);
 
-            System.out.println("[CLIENT] Server message: " + colorMessage);
-            System.out.println("[CLIENT] Server mesaji: " + colorMessage);
+                if (bytesRead == -1) {
+                    System.out.println("[CLIENT] Server disconnected");
+                    break;
+                }
 
-            // Example:
-            // COLOR:WHITE
-            if (colorMessage.toUpperCase().contains("WHITE")) {
+                String serverMessage = new String(buffer, 0, bytesRead);
 
-                playerColor = "WHITE";
+                System.out.println("[CLIENT] Server message: " + serverMessage);
+                System.out.println("[CLIENT] Server mesaji: " + serverMessage);
 
-            } else if (colorMessage.toUpperCase().contains("BLACK")) {
+                if (serverMessage.equals("WAITING")) {
 
-                playerColor = "BLACK";
+                    javax.swing.JOptionPane.showMessageDialog(
+                            null,
+                            "Waiting for opponent..."
+                    );
+
+                } else if (serverMessage.toUpperCase().contains("WHITE")) {
+
+                    playerColor = "WHITE";
+
+                } else if (serverMessage.toUpperCase().contains("BLACK")) {
+
+                    playerColor = "BLACK";
+                }
             }
 
             System.out.println("[CLIENT] Your color: " + playerColor);
@@ -88,6 +87,7 @@ public class ChessClient {
                     + newRow + "," + newCol;
 
             outputStream.write(moveMessage.getBytes());
+            outputStream.flush();
 
             System.out.println("[CLIENT] Move sent: " + moveMessage);
             System.out.println("[CLIENT] Hamle gonderildi: " + moveMessage);
@@ -99,7 +99,6 @@ public class ChessClient {
         }
     }
 
-    // Getter
     public String getPlayerColor() {
         return playerColor;
     }
@@ -129,8 +128,6 @@ public class ChessClient {
 
                     System.out.println("[CLIENT] Message received: " + message);
 
-                    System.out.println("[CLIENT] Message received: " + message);
-
                     if (message.equals("DISCONNECTED")) {
 
                         javax.swing.JOptionPane.showMessageDialog(
@@ -152,26 +149,30 @@ public class ChessClient {
                         int newCol = Integer.parseInt(parts[3]);
 
                         if (gameScreen != null) {
-                            gameScreen.applyOpponentMove(oldRow, oldCol, newRow, newCol);
+                            gameScreen.applyOpponentMove(
+                                    oldRow,
+                                    oldCol,
+                                    newRow,
+                                    newCol
+                            );
                         }
                     }
                 }
 
             } catch (Exception e) {
 
-    System.out.println("[CLIENT] Listen Error / Dinleme Hatasi: "
-            + e.getMessage());
+                System.out.println("[CLIENT] Listen Error / Dinleme Hatasi: "
+                        + e.getMessage());
 
-    javax.swing.JOptionPane.showMessageDialog(
-            null,
-            "Opponent disconnected!"
-    );
+                javax.swing.JOptionPane.showMessageDialog(
+                        null,
+                        "Opponent disconnected!"
+                );
 
-    System.exit(0);
-}
+                System.exit(0);
+            }
         });
 
         listenerThread.start();
     }
-
 }
