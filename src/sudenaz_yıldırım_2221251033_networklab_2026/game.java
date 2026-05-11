@@ -60,7 +60,7 @@ public class game extends javax.swing.JFrame {
             }
         }
         setupPieces();
-
+        updateTurnLabel();
     }
 
     public game(ChessClient client) {
@@ -71,72 +71,73 @@ public class game extends javax.swing.JFrame {
         this.client.listenForMessages();
     }
 
-    private void squareClicked(int row, int col) {
+private void squareClicked(int row, int col) {
 
-        if (gameOver) {
-            JOptionPane.showMessageDialog(this, "Oyun bitti!");
+    if (gameOver) {
+        JOptionPane.showMessageDialog(this, "Oyun bitti!");
+        return;
+    }
+
+    if (selectedRow == -1) {
+
+        if (pieces[row][col] == null) {
+            JOptionPane.showMessageDialog(this, "Burada taş yok!");
             return;
         }
 
-        if (selectedRow == -1) {
+        String piece = pieces[row][col];
 
-            if (pieces[row][col] == null) {
-                JOptionPane.showMessageDialog(this, "Burada taş yok!");
+        if (client != null) {
+
+            String myColor = client.getPlayerColor();
+
+            if (myColor == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Player color could not be found!");
                 return;
             }
 
-            String piece = pieces[row][col];
+            myColor = myColor.trim().toLowerCase(Locale.ENGLISH);
+            String pieceColor = getPieceColor(piece).trim().toLowerCase(Locale.ENGLISH);
 
-            if (client != null) {
-
-                String myColor = client.getPlayerColor();
-
-                if (myColor == null) {
-                    JOptionPane.showMessageDialog(this,
-                            "Player color could not be found!");
-                    return;
-                }
-
-                myColor = myColor.trim().toLowerCase(Locale.ENGLISH);
-                String pieceColor = getPieceColor(piece).trim().toLowerCase(Locale.ENGLISH);
-                System.out.println("My color: " + myColor);
-                System.out.println("Piece color: " + pieceColor);
-
-                if (!pieceColor.equals(myColor)) {
-                    JOptionPane.showMessageDialog(this,
-                            "You can only move your own pieces!");
-                    return;
-                }
-            }
-
-            if (isWhiteTurn && !piece.startsWith("white")) {
-                JOptionPane.showMessageDialog(this, "Beyazın sırası!");
+            if (!pieceColor.equals(myColor)) {
+                JOptionPane.showMessageDialog(this,
+                        "You can only move your own pieces!");
                 return;
             }
+        }
 
-            if (!isWhiteTurn && !piece.startsWith("black")) {
-                JOptionPane.showMessageDialog(this, "Siyahın sırası!");
-                return;
-            }
-
-            selectedRow = row;
-            selectedCol = col;
-
-            resetHighlights();
-            showPossibleMoves(row, col);
+        if (isWhiteTurn && !piece.startsWith("white")) {
+            JOptionPane.showMessageDialog(this, "Beyazın sırası!");
             return;
         }
 
-        if (isValidMove(selectedRow, selectedCol, row, col)) {
+        if (!isWhiteTurn && !piece.startsWith("black")) {
+            JOptionPane.showMessageDialog(this, "Siyahın sırası!");
+            return;
+        }
 
-            String movingPiece = pieces[selectedRow][selectedCol];
-            String movingColor = getPieceColor(movingPiece);
-            String opponentColor = movingColor.equals("white") ? "black" : "white";
+        selectedRow = row;
+        selectedCol = col;
+
+        resetHighlights();
+        showPossibleMoves(row, col);
+        return;
+    }
+
+    if (isValidMove(selectedRow, selectedCol, row, col)) {
+
+        String movingPiece = pieces[selectedRow][selectedCol];
+        String movingColor = getPieceColor(movingPiece);
+        String opponentColor = movingColor.equals("white") ? "black" : "white";
+
+        String capturedPiece = pieces[row][col];
+
+        if (capturedPiece != null && capturedPiece.contains("king")) {
 
             movePiece(selectedRow, selectedCol, row, col);
-            // SEND MOVE TO SERVER
-            if (client != null) {
 
+            if (client != null) {
                 client.sendMove(
                         selectedRow,
                         selectedCol,
@@ -145,50 +146,90 @@ public class game extends javax.swing.JFrame {
                 );
             }
 
-            if (isCheckmate(opponentColor)) {
+            gameOver = true;
+            turnLabel.setText("Game Over");
 
-                gameOver = true;
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Rakibin şahı yenildi! Oyunu kazandınız."
+            );
 
-                int choice = JOptionPane.showConfirmDialog(
-                        this,
-                        "Mat! Tekrar oynamak ister misiniz?",
-                        "Oyun Bitti",
-                        JOptionPane.YES_NO_OPTION
-                );
+            int choice = JOptionPane.showConfirmDialog(
+                    this,
+                    "Tekrar oynamak ister misiniz?",
+                    "Oyun Bitti",
+                    JOptionPane.YES_NO_OPTION
+            );
 
-                if (choice == JOptionPane.YES_OPTION) {
+            if (choice == JOptionPane.YES_OPTION) {
 
-                    startpage start = new startpage();
-                    start.setVisible(true);
+                startpage start = new startpage();
+                start.setVisible(true);
+                this.dispose();
 
-                    this.dispose();
-
-                } else {
-
-                    JOptionPane.showMessageDialog(this, "Oyun kapatılıyor.");
-                    System.exit(0);
-                }
-
-                return;
-            }
-            if (isKingInCheck(opponentColor)) {
-                JOptionPane.showMessageDialog(this, "Şah!");
+            } else {
+                System.exit(0);
             }
 
-            isWhiteTurn = !isWhiteTurn;
-
-            selectedRow = -1;
-            selectedCol = -1;
-            resetHighlights();
-        } else {
-            JOptionPane.showMessageDialog(this, "Bu taş buraya gidemez!");
-
-            selectedRow = -1;
-            selectedCol = -1;
-            resetHighlights();
+            return;
         }
-    }
 
+        movePiece(selectedRow, selectedCol, row, col);
+
+        if (client != null) {
+            client.sendMove(
+                    selectedRow,
+                    selectedCol,
+                    row,
+                    col
+            );
+        }
+
+        if (isCheckmate(opponentColor)) {
+
+            gameOver = true;
+            turnLabel.setText("Game Over");
+
+            int choice = JOptionPane.showConfirmDialog(
+                    this,
+                    "Mat! Tekrar oynamak ister misiniz?",
+                    "Oyun Bitti",
+                    JOptionPane.YES_NO_OPTION
+            );
+
+            if (choice == JOptionPane.YES_OPTION) {
+
+                startpage start = new startpage();
+                start.setVisible(true);
+                this.dispose();
+
+            } else {
+
+                JOptionPane.showMessageDialog(this, "Oyun kapatılıyor.");
+                System.exit(0);
+            }
+
+            return;
+        }
+
+        if (isKingInCheck(opponentColor)) {
+            JOptionPane.showMessageDialog(this, "Şah!");
+        }
+
+        isWhiteTurn = !isWhiteTurn;
+        updateTurnLabel();
+        selectedRow = -1;
+        selectedCol = -1;
+        resetHighlights();
+
+    } else {
+        JOptionPane.showMessageDialog(this, "Bu taş buraya gidemez!");
+
+        selectedRow = -1;
+        selectedCol = -1;
+        resetHighlights();
+    }
+}
     private void setupPieces() {
         pieces[0][1] = "white_knight";
         pieces[0][6] = "white_knight";
@@ -492,18 +533,49 @@ public class game extends javax.swing.JFrame {
         boardButtons[fromRow][fromCol].setIcon(null);
     }
 
-    public void applyOpponentMove(int oldRow, int oldCol, int newRow, int newCol) {
+public void applyOpponentMove(int oldRow, int oldCol, int newRow, int newCol) {
 
-        movePiece(oldRow, oldCol, newRow, newCol);
+    String capturedPiece = pieces[newRow][newCol];
 
-        isWhiteTurn = !isWhiteTurn;
+    movePiece(oldRow, oldCol, newRow, newCol);
 
-        selectedRow = -1;
-        selectedCol = -1;
+    if (capturedPiece != null && capturedPiece.contains("king")) {
 
-        resetHighlights();
+        gameOver = true;
+        turnLabel.setText("Game Over");
+
+        JOptionPane.showMessageDialog(
+                this,
+                "Şahınız yenildi! Oyun bitti."
+        );
+
+        int choice = JOptionPane.showConfirmDialog(
+                this,
+                "Tekrar oynamak ister misiniz?",
+                "Oyun Bitti",
+                JOptionPane.YES_NO_OPTION
+        );
+
+        if (choice == JOptionPane.YES_OPTION) {
+
+            startpage start = new startpage();
+            start.setVisible(true);
+            this.dispose();
+
+        } else {
+            System.exit(0);
+        }
+
+        return;
     }
 
+    isWhiteTurn = !isWhiteTurn;
+    updateTurnLabel();
+    selectedRow = -1;
+    selectedCol = -1;
+
+    resetHighlights();
+}
     private boolean isInsideBoard(int row, int col) {
         return row >= 0 && row < 8 && col >= 0 && col < 8;
     }
@@ -514,6 +586,36 @@ public class game extends javax.swing.JFrame {
                 boardButtons[row][col].setBorder(null);
                 boardButtons[row][col].setBorderPainted(false);
             }
+        }
+    }
+
+    private void updateTurnLabel() {
+
+        if (client == null) {
+
+            if (isWhiteTurn) {
+                turnLabel.setText("White's Turn");
+            } else {
+                turnLabel.setText("Black's Turn");
+            }
+
+            return;
+        }
+
+        String myColor = client.getPlayerColor();
+
+        if (myColor == null) {
+            return;
+        }
+
+        boolean myTurn
+                = (isWhiteTurn && myColor.equalsIgnoreCase("WHITE"))
+                || (!isWhiteTurn && myColor.equalsIgnoreCase("BLACK"));
+
+        if (myTurn) {
+            turnLabel.setText("Your Turn");
+        } else {
+            turnLabel.setText("Waiting for Opponent...");
         }
     }
 
@@ -771,6 +873,7 @@ public class game extends javax.swing.JFrame {
         jButton62 = new javax.swing.JButton();
         jButton63 = new javax.swing.JButton();
         jButton64 = new javax.swing.JButton();
+        turnLabel = new javax.swing.JLabel();
         board_lbl = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -984,6 +1087,10 @@ public class game extends javax.swing.JFrame {
         jButton64.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/skale.png"))); // NOI18N
         jPanel1.add(jButton64, new org.netbeans.lib.awtextra.AbsoluteConstraints(700, 710, 80, 70));
 
+        turnLabel.setForeground(new java.awt.Color(0, 255, 51));
+        turnLabel.setText("TURN");
+        jPanel1.add(turnLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(600, 0, 150, 20));
+
         board_lbl.setIcon(new javax.swing.ImageIcon(getClass().getResource("/images/tahta.png"))); // NOI18N
         jPanel1.add(board_lbl, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 800, 800));
 
@@ -1120,5 +1227,6 @@ public class game extends javax.swing.JFrame {
     private javax.swing.JButton jButton8;
     private javax.swing.JButton jButton9;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JLabel turnLabel;
     // End of variables declaration//GEN-END:variables
 }

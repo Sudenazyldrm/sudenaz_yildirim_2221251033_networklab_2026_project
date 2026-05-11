@@ -132,7 +132,7 @@ public class ChessClient {
 
                         javax.swing.JOptionPane.showMessageDialog(
                                 null,
-                                "Opponent disconnected!"
+                                "The other player left the game.!"
                         );
 
                         System.exit(0);
@@ -166,7 +166,7 @@ public class ChessClient {
 
                 javax.swing.JOptionPane.showMessageDialog(
                         null,
-                        "Opponent disconnected!"
+                        "The other player left the game.!"
                 );
 
                 System.exit(0);
