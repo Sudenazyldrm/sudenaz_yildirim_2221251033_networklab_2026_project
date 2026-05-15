@@ -35,7 +35,6 @@ public class ClientHandler extends Thread {
 
             while (true) {
 
-                // Read message from this client
                 // Bu clienttan mesaj oku
                 int bytesRead = inputStream.read(buffer);
 
@@ -44,7 +43,6 @@ public class ClientHandler extends Thread {
                     System.out.println("[SERVER] " + playerColor + " disconnected");
                     System.out.println("[SERVER] " + playerColor + " baglantisi koptu");
 
-                    // INFORM OPPONENT
                     // Rakibe bilgi gonder
                     opponentOutputStream.write("DISCONNECTED".getBytes());
                     opponentOutputStream.flush();
@@ -56,7 +54,6 @@ public class ClientHandler extends Thread {
                 System.out.println("[SERVER] Received from " + playerColor + ": " + receivedMessage);
                 System.out.println("[SERVER] " + playerColor + " tarafindan alinan mesaj: " + receivedMessage);
 
-                // Forward message to opponent
                 // Mesaji rakip oyuncuya gonder
                 opponentOutputStream.write(receivedMessage.getBytes());
 

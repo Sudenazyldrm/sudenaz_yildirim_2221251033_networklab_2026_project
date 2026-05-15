@@ -24,6 +24,7 @@ public class game extends javax.swing.JFrame {
 
     private ChessClient client;
 
+    // oyuncunun seçtiği taşın koordinatları
     int selectedRow = -1;
     int selectedCol = -1;
 
@@ -70,7 +71,7 @@ public class game extends javax.swing.JFrame {
         this.client.setGameScreen(this);
         this.client.listenForMessages();
     }
-
+// kullanıcı tahtada bir kareye tıkladığında çalışır
 private void squareClicked(int row, int col) {
 
     if (gameOver) {
@@ -229,7 +230,7 @@ private void squareClicked(int row, int col) {
         selectedCol = -1;
         resetHighlights();
     }
-}
+}// başlangıç taş dizilimini oluşturur
     private void setupPieces() {
         pieces[0][1] = "white_knight";
         pieces[0][6] = "white_knight";
@@ -260,7 +261,7 @@ private void squareClicked(int row, int col) {
             pieces[6][col] = "black_pawn";
         }
     }
-
+// seçilen taşın gidebileceği yerleri gösterir
     private void showPossibleMoves(int row, int col) {
         String piece = pieces[row][col];
 
@@ -423,7 +424,7 @@ private void squareClicked(int row, int col) {
             }
         }
     }
-
+// taşın hareketinin kurallara uygun olup olmadığını kontrol eder
     private boolean isValidMove(int fromRow, int fromCol, int toRow, int toCol) {
         String piece = pieces[fromRow][fromCol];
 
@@ -522,7 +523,7 @@ private void squareClicked(int row, int col) {
 
         return false;
     }
-
+// taşı eski konumdan yeni konuma taşır    
     private void movePiece(int fromRow, int fromCol, int toRow, int toCol) {
         pieces[toRow][toCol] = pieces[fromRow][fromCol];
         pieces[fromRow][fromCol] = null;
@@ -532,7 +533,7 @@ private void squareClicked(int row, int col) {
         boardButtons[toRow][toCol].setIcon(icon);
         boardButtons[fromRow][fromCol].setIcon(null);
     }
-
+// rakibin yaptığı hamleyi tahtaya uygular
 public void applyOpponentMove(int oldRow, int oldCol, int newRow, int newCol) {
 
     String capturedPiece = pieces[newRow][newCol];
@@ -576,10 +577,12 @@ public void applyOpponentMove(int oldRow, int oldCol, int newRow, int newCol) {
 
     resetHighlights();
 }
+
+// koordinatların tahta sınırları içinde olup olmadığını kontrol eder
     private boolean isInsideBoard(int row, int col) {
         return row >= 0 && row < 8 && col >= 0 && col < 8;
     }
-
+// sarı hamle gösterimlerini temizler
     private void resetHighlights() {
         for (int row = 0; row < 8; row++) {
             for (int col = 0; col < 8; col++) {
@@ -589,6 +592,7 @@ public void applyOpponentMove(int oldRow, int oldCol, int newRow, int newCol) {
         }
     }
 
+    // ekrandaki sıra bilgisini günceller
     private void updateTurnLabel() {
 
         if (client == null) {
@@ -619,6 +623,7 @@ public void applyOpponentMove(int oldRow, int oldCol, int newRow, int newCol) {
         }
     }
 
+    // taşın gideceği yolda başka taş olup olmadığını kontrol eder
     private boolean isPathClear(int fromRow, int fromCol, int toRow, int toCol) {
         int rowStep = Integer.compare(toRow, fromRow);
         int colStep = Integer.compare(toCol, fromCol);
@@ -671,6 +676,7 @@ public void applyOpponentMove(int oldRow, int oldCol, int newRow, int newCol) {
         return "";
     }
 
+    // şahın tehdit altında olup olmadığını kontrol eder
     private boolean isKingInCheck(String kingColor) {
         int kingRow = -1;
         int kingCol = -1;
@@ -705,6 +711,7 @@ public void applyOpponentMove(int oldRow, int oldCol, int newRow, int newCol) {
         return false;
     }
 
+    // bir taşın belirli kareye saldırıp saldıramayacağını kontrol eder
     private boolean canAttackSquare(int fromRow, int fromCol, int toRow, int toCol) {
         String piece = pieces[fromRow][fromCol];
 
@@ -753,6 +760,7 @@ public void applyOpponentMove(int oldRow, int oldCol, int newRow, int newCol) {
         return false;
     }
 
+    // yapılan hamlenin şahı tehlikeye atıp atmadığını kontrol eder
     private boolean wouldLeaveKingInCheck(int fromRow, int fromCol, int toRow, int toCol) {
         String movingPiece = pieces[fromRow][fromCol];
         String capturedPiece = pieces[toRow][toCol];
@@ -768,6 +776,7 @@ public void applyOpponentMove(int oldRow, int oldCol, int newRow, int newCol) {
         return result;
     }
 
+    // şah mat durumunu kontrol eder
     private boolean isCheckmate(String kingColor) {
 
         if (!isKingInCheck(kingColor)) {

@@ -155,7 +155,6 @@ public class startpage extends javax.swing.JFrame {
         return;
     }
 
-    // PORT CONTROL
    // PORT CONTROL
 if (port.isEmpty()) {
     JOptionPane.showMessageDialog(this,

@@ -33,7 +33,7 @@ public class ChessClient {
 
             byte[] buffer = new byte[1024];
 
-            // Read messages until color comes
+           
             // Renk bilgisi gelene kadar serverdan mesaj oku
             while (playerColor == null) {
 
@@ -48,7 +48,8 @@ public class ChessClient {
 
                 System.out.println("[CLIENT] Server message: " + serverMessage);
                 System.out.println("[CLIENT] Server mesaji: " + serverMessage);
-
+                
+                // ikinci oyuncu bekleniyorsa kullancıya bilgi 
                 if (serverMessage.equals("WAITING")) {
 
                     javax.swing.JOptionPane.showMessageDialog(
@@ -75,13 +76,13 @@ public class ChessClient {
         }
     }
 
-    // Send move to server
+   
     // Hamleyi servera gonder
     public void sendMove(int oldRow, int oldCol,
             int newRow, int newCol) {
 
         try {
-
+                // hamle mesaj formatı oluşturulur
             String moveMessage
                     = "MOVE:" + oldRow + "," + oldCol + ","
                     + newRow + "," + newCol;
